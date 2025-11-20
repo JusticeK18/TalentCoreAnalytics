@@ -332,4 +332,92 @@
     })
 )
 
+;; Advanced Analytics Function - Comprehensive Talent Scoring and Ranking System
+;; This function provides a detailed analytical assessment of a talent's profile
+;; by calculating multiple metrics including skill diversity, endorsement quality,
+;; project success rate, and overall platform standing.
+(define-public (generate-comprehensive-talent-analytics 
+    (talent principal)
+    (skill-ids (list 10 uint)))
+    (let
+        (
+            (profile (unwrap! (map-get? talent-profiles talent) err-not-found))
+            (reputation (get reputation-score profile))
+            (endorsement-count (get total-endorsements profile))
+            (verified-skills (get verified-skills-count profile))
+            (completed-projects (get projects-completed profile))
+            (account-age (- block-height (get registration-block profile)))
+            
+            ;; Calculate skill diversity score (0-100)
+            (skill-diversity-score (if (> verified-skills u0)
+                (min-uint u100 (* verified-skills u10))
+                u0
+            ))
+            
+            ;; Calculate endorsement quality ratio
+            (endorsement-ratio (if (> verified-skills u0)
+                (/ (* endorsement-count u100) verified-skills)
+                u0
+            ))
+            
+            ;; Calculate project success rate (assuming all completed are successful)
+            (project-success-rate (if (> completed-projects u0)
+                u100
+                u0
+            ))
+            
+            ;; Calculate activity score based on account age and contributions
+            (activity-score (if (> account-age u0)
+                (min-uint u100 (/ (* (+ endorsement-count completed-projects) u1000) account-age))
+                u0
+            ))
+            
+            ;; Calculate overall talent score (weighted average)
+            (talent-score (/ 
+                (+ 
+                    (* reputation u30)
+                    (* skill-diversity-score u20)
+                    (* (min-uint endorsement-ratio u100) u25)
+                    (* project-success-rate u15)
+                    (* activity-score u10)
+                )
+                u100
+            ))
+            
+            ;; Determine talent tier based on score
+            (talent-tier (if (>= talent-score u800)
+                "Elite"
+                (if (>= talent-score u600)
+                    "Expert"
+                    (if (>= talent-score u400)
+                        "Professional"
+                        (if (>= talent-score u200)
+                            "Intermediate"
+                            "Beginner"
+                        )
+                    )
+                )
+            ))
+        )
+        
+        ;; Return comprehensive analytics object
+        (ok {
+            talent-address: talent,
+            overall-score: talent-score,
+            tier: talent-tier,
+            reputation-score: reputation,
+            skill-diversity: skill-diversity-score,
+            endorsement-quality: endorsement-ratio,
+            project-success-rate: project-success-rate,
+            activity-score: activity-score,
+            total-endorsements: endorsement-count,
+            verified-skills: verified-skills,
+            completed-projects: completed-projects,
+            account-age-blocks: account-age,
+            is-active: (get is-active profile),
+            percentile-rank: (min-uint u100 (/ (* talent-score u100) max-reputation))
+        })
+    )
+)
+
 
